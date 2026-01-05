@@ -41,47 +41,56 @@ xcodebuild clean -project BlossomMovie.xcodeproj -scheme BlossomMovie
 
 ### File Organization
 
-The project uses **flat file structure with hierarchical naming conventions** instead of folder grouping. All files are in `BlossomMovie/` with prefixes indicating their layer:
+The project uses a **feature-based folder structure** that mirrors the Clean Architecture layers:
 
-- `App*` - Application entry points (AppBlossomMovieApp.swift, AppAppTabView.swift)
-- `Configuration*` - Configuration management
-- `Data*` - Data layer (Network, Repository, Cache)
-- `Domain*` - Domain models
-- `Features*` - Feature modules organized by feature name
-- `Infrastructure*` - Cross-cutting concerns (DI, Logging, Constants)
-- `Presentation*` - ViewModels and shared views
-- `Tests*` - Test files and mocks
+```
+BlossomMovie/
+├── App/                     - Application entry points
+├── Features/                - Feature modules (Home, Search, Upcoming, Downloads, MediaDetail)
+│   └── {Feature}/
+│       ├── FeatureView.swift
+│       └── Views/
+│           ├── Components/
+│           └── ...
+├── Presentation/ViewModels/ - Centralized ViewModels
+├── Data/                    - Data layer (Network, Repository, Cache)
+├── Domain/Models/           - Domain models
+├── Infrastructure/          - Cross-cutting concerns (DI, Logging, Constants)
+├── Configuration/           - API configuration
+├── Shared/UIComponents/     - Reusable UI components
+└── Tests/                   - Test files and mocks
+```
 
 ### Layers
 
 **1. Infrastructure Layer**
-- `InfrastructureDependencyInjectionDependencyContainer.swift` - Singleton DI container managing all services with lazy loading
-- `ConfigurationConfigurationManager.swift` - Manages API configuration and environment switching
-- `InfrastructureConstantsAppConstants.swift` - Centralized constants (UI, Layout, Accessibility IDs)
-- `InfrastructureLoggerLogger.swift` - Logging system with os.log integration
+- `Infrastructure/DependencyInjection/DependencyContainer.swift` - Singleton DI container managing all services with lazy loading
+- `Configuration/ConfigurationManager.swift` - Manages API configuration and environment switching
+- `Infrastructure/Constants/AppConstants.swift` - Centralized constants (UI, Layout, Accessibility IDs)
+- `Infrastructure/Logger/Logger.swift` - Logging system with os.log integration
 
 **2. Domain Layer**
-- `DomainModelsMediaItem.swift` - Core domain model
+- `Domain/Models/MediaItem.swift` - Core domain model
   - SwiftData `@Model` for persistence
   - Codable for API serialization
   - Computed properties: `fullPosterURL`, `fullBackdropURL`, `displayTitle`, `formattedRating`
   - Generic `TMDBResponse<T>` wrapper for API responses
 
 **3. Data Layer**
-- `DataNetworkNetworkService.swift` - Generic network abstraction
+- `Data/Network/NetworkService.swift` - Generic network abstraction
   - Protocol-based design (`NetworkServiceProtocol`, `Endpoint`)
   - `TMDBEndpoint` enum: trending, topRated, upcoming, search
   - `YouTubeEndpoint` for video search
   - Comprehensive `NetworkError` handling
-- `DataRepositoriesMediaRepository.swift` - Repository pattern implementation
+- `Data/Repositories/MediaRepository.swift` - Repository pattern implementation
   - `MediaRepositoryProtocol` defines business operations
   - Transparent cache integration (check cache → fetch network → cache result)
-- `DataCacheCacheService.swift` - Two-tier caching
+- `Data/Cache/CacheService.swift` - Two-tier caching
   - `CacheService` - In-memory with time-based expiration (actor-based thread safety)
   - `PersistentCacheService` - UserDefaults-based persistence
 
 **4. Presentation Layer**
-- ViewModels in `PresentationViewModels*.swift`
+- ViewModels in `Presentation/ViewModels/`
   - All use `@MainActor` for thread safety
   - All use `@Observable` macro for reactive updates
   - State management through enums (LoadingState, SearchState)
@@ -91,11 +100,12 @@ The project uses **flat file structure with hierarchical naming conventions** in
 
 Each feature follows consistent structure:
 ```
-FeaturesHome/Search/Upcoming/Downloads/MediaDetail*
-  ├── *FeatureView - Entry point with NavigationStack, injects ViewModel
-  ├── *View - Main view composition, manages navigation state
-  ├── *ContentView - Business logic and loading states
-  └── ViewsComponents* - Reusable UI components
+Features/{Home,Search,Upcoming,Downloads,MediaDetail}/
+  ├── FeatureView.swift - Entry point with NavigationStack, injects ViewModel
+  ├── Views/
+  │   ├── {Feature}View.swift - Main view composition, manages navigation state
+  │   ├── ContentView.swift - Business logic and loading states
+  │   └── Components/ - Reusable UI components
 ```
 
 Features are tab-based: Home, Upcoming, Search, Downloads
@@ -130,7 +140,7 @@ Features are tab-based: Home, Upcoming, Search, Downloads
 **Test Infrastructure:**
 - Swift Testing framework (using `@Test` macro)
 - Protocol-based mocking (no third-party frameworks)
-- Mock files in `TestsBlossomMovieTestsMocksMockServices.swift`
+- Mock files in `Tests/Mocks/MockServices.swift`
   - `MockMediaRepository` implements `MediaRepositoryProtocol`
   - `MockNetworkService` for network testing
   - Control flags: `shouldSucceed`, `mockData`
@@ -141,28 +151,29 @@ Features are tab-based: Home, Upcoming, Search, Downloads
 
 ## Adding a New Feature
 
-1. Create `Features<Name><Name>FeatureView.swift` - Entry point with NavigationStack
-2. Create `Features<Name>Views<Name>View.swift` - Main view using DependencyContainer from environment
-3. Create `Features<Name>Views<Name>ContentView.swift` - Business logic for loading states
-4. Create components in `Features<Name>ViewsComponents*.swift` - Reusable UI elements
-5. Create `PresentationViewModels<Name>ViewModel.swift` - ViewModel with `@Observable` and `@MainActor`
-6. Register ViewModel in `InfrastructureDependencyInjectionDependencyContainer.swift`
-7. If new data operations needed:
-   - Add method to `MediaRepositoryProtocol` in `DataRepositoriesMediaRepository.swift`
+1. Create feature folder: `Features/{FeatureName}/`
+2. Create `Features/{FeatureName}/FeatureView.swift` - Entry point with NavigationStack
+3. Create `Features/{FeatureName}/Views/{FeatureName}View.swift` - Main view using DependencyContainer from environment
+4. Create `Features/{FeatureName}/Views/ContentView.swift` - Business logic for loading states
+5. Create components in `Features/{FeatureName}/Views/Components/` - Reusable UI elements
+6. Create `Presentation/ViewModels/{FeatureName}ViewModel.swift` - ViewModel with `@Observable` and `@MainActor`
+7. Register ViewModel in `Infrastructure/DependencyInjection/DependencyContainer.swift`
+8. If new data operations needed:
+   - Add method to `MediaRepositoryProtocol` in `Data/Repositories/MediaRepository.swift`
    - Implement in `MediaRepository`
-   - Add endpoint to `TMDBEndpoint` enum in `DataNetworkNetworkService.swift`
-8. Add tab to `AppAppTabView.swift` if it's a main feature
+   - Add endpoint to `TMDBEndpoint` enum in `Data/Network/NetworkService.swift`
+9. Add tab to `App/AppTabView.swift` if it's a main feature
 
 ## Error Handling
 
 - `ConfigurationError` - Configuration loading failures
-- `NetworkError` - HTTP, decoding, request failures (in `DataNetworkNetworkService.swift`)
+- `NetworkError` - HTTP, decoding, request failures (in `Data/Network/NetworkService.swift`)
 - State-based errors in ViewModels (e.g., `LoadingState.error(String)`)
 - All network operations use async/await with proper error propagation
 
 ## Environment Configuration
 
-Switch between `development` and `production` in `ConfigurationConfigurationManager.swift`:
+Switch between `development` and `production` in `Configuration/ConfigurationManager.swift`:
 ```swift
 @Published var currentEnvironment: Environment = .development // or .production
 ```

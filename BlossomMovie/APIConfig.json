@@ -2,18 +2,18 @@
 {
     "development": {
         "tmdbBaseURL": "https://api.themoviedb.org",
-        "tmdbAPIKey": "YOUR_DEVELOPMENT_TMDB_API_KEY",
+        "tmdbAPIKey": "6aa778e3e92fd982dd88aa55776a913a",
         "youtubeBaseURL": "https://youtube.com/embed",
-        "youtubeAPIKey": "YOUR_DEVELOPMENT_YOUTUBE_API_KEY",
+        "youtubeAPIKey": "AIzaSyDnp0sdx4PKYuXNXtb6xtj_0smIZdiPQh4",
         "youtubeSearchURL": "https://www.googleapis.com/youtube/v3/search",
         "enableLogging": true,
         "cacheTimeout": 300
     },
     "production": {
         "tmdbBaseURL": "https://api.themoviedb.org",
-        "tmdbAPIKey": "YOUR_PRODUCTION_TMDB_API_KEY",
+        "tmdbAPIKey": "6aa778e3e92fd982dd88aa55776a913a",
         "youtubeBaseURL": "https://youtube.com/embed",
-        "youtubeAPIKey": "YOUR_PRODUCTION_YOUTUBE_API_KEY",
+        "youtubeAPIKey": "AIzaSyDnp0sdx4PKYuXNXtb6xtj_0smIZdiPQh4",
         "youtubeSearchURL": "https://www.googleapis.com/youtube/v3/search",
         "enableLogging": false,
         "cacheTimeout": 600
