@@ -9,11 +9,20 @@ BlossomMovie is an iOS 18+ SwiftUI application for browsing movies and TV shows 
 ## Setup Requirements
 
 **API Configuration:**
-Before building, you must configure API keys in `APIConfig.json`:
-- TMDB API key from https://www.themoviedb.org
-- YouTube API key from https://console.cloud.google.com
+Before building, you must configure API keys:
 
-The app supports both `development` and `production` environments with separate configurations.
+1. Copy the template file:
+   ```bash
+   cp BlossomMovie/APIConfig.json.template BlossomMovie/APIConfig.json
+   ```
+
+2. Edit `BlossomMovie/APIConfig.json` and replace the placeholder values:
+   - `YOUR_TMDB_API_KEY_HERE` - Get your TMDB API key from https://www.themoviedb.org
+   - `YOUR_YOUTUBE_API_KEY_HERE` - Get your YouTube API key from https://console.cloud.google.com
+
+3. The app supports both `development` and `production` environments with separate configurations.
+
+**Note:** `APIConfig.json` is git-ignored to protect API keys. Never commit this file to version control.
 
 ## Build Commands
 
