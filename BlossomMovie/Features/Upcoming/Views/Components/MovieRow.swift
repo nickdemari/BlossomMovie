@@ -2,7 +2,7 @@
 //  UpcomingMovieRow.swift
 //  BlossomMovie
 //
-//  Created by Enterprise Refactoring on 1/4/26.
+//  Created by Nick Demari on 1/4/26.
 //
 
 import SwiftUI
@@ -10,24 +10,28 @@ import SwiftUI
 struct UpcomingMovieRow: View {
     let movie: MediaItem
     let onTap: () -> Void
-    
+
+    // Static formatters for performance
+    private static let inputFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
+
+    private static let outputFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, yyyy"
+        return formatter
+    }()
+
     var body: some View {
         HStack(spacing: AppConstants.Layout.standardPadding) {
             // Poster
-            AsyncImage(url: URL(string: movie.fullPosterURL ?? "")) { image in
-                image
-                    .resizable()
-                    .scaledToFit()
-            } placeholder: {
-                Rectangle()
-                    .fill(Color.gray.opacity(0.3))
-                    .overlay {
-                        ProgressView()
-                            .scaleEffect(0.8)
-                    }
-            }
-            .frame(width: 80, height: 120)
-            .clipShape(RoundedRectangle(cornerRadius: AppConstants.Layout.cornerRadius))
+            CachedAsyncImage(
+                posterURL: movie.fullPosterURL,
+                width: 80,
+                height: 120
+            )
             
             // Content
             VStack(alignment: .leading, spacing: AppConstants.Layout.compactPadding) {
@@ -77,7 +81,7 @@ struct UpcomingMovieRow: View {
             // Chevron
             Image(systemName: "chevron.right")
                 .font(.caption)
-                .foregroundColor(.tertiary)
+                .foregroundStyle(.tertiary)
         }
         .contentShape(Rectangle())
         .onTapGesture(perform: onTap)
@@ -88,15 +92,11 @@ struct UpcomingMovieRow: View {
     }
     
     private func formatReleaseDate(_ dateString: String) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        
-        guard let date = formatter.date(from: dateString) else {
+        guard let date = Self.inputFormatter.date(from: dateString) else {
             return dateString
         }
-        
-        formatter.dateFormat = "MMM d, yyyy"
-        return formatter.string(from: date)
+
+        return Self.outputFormatter.string(from: date)
     }
 }
 

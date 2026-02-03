@@ -2,7 +2,7 @@
 //  HomeView.swift
 //  BlossomMovie
 //
-//  Created by Enterprise Refactoring on 1/4/26.
+//  Created by Nick Demari on 1/4/26.
 //
 
 import SwiftUI
@@ -10,9 +10,9 @@ import SwiftData
 
 struct HomeView: View {
     @Environment(\.dependencies) private var dependencies
+    @Environment(\.modelContext) private var modelContext
     @Binding var navigationPath: NavigationPath
-    let modelContext: ModelContext
-    
+
     var body: some View {
         ScrollView(.vertical) {
             LazyVStack(spacing: AppConstants.Layout.standardPadding) {
@@ -28,8 +28,7 @@ struct HomeView: View {
                             navigationPath.append(item)
                         },
                         onDownloadTapped: { item in
-                            dependencies.createDownloadViewModel()
-                                .addToDownloads(item, context: modelContext)
+                            dependencies.downloadViewModel.addToDownloads(item, context: modelContext)
                         }
                     )
                 case .error(let message):
@@ -53,13 +52,14 @@ struct HomeView: View {
 }
 
 #Preview {
-    NavigationStack {
-        HomeView(
-            navigationPath: .constant(NavigationPath()),
-            modelContext: ModelContext(
-                try! ModelContainer(for: MediaItem.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
-            )
-        )
+    let previewContainer = try? ModelContainer(
+        for: MediaItem.self,
+        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+    )
+
+    return NavigationStack {
+        HomeView(navigationPath: .constant(NavigationPath()))
     }
     .injectDependencies()
+    .modelContainer(previewContainer ?? (try! ModelContainer(for: MediaItem.self)))
 }

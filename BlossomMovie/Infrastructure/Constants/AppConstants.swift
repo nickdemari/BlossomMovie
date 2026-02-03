@@ -2,7 +2,7 @@
 //  AppConstants.swift
 //  BlossomMovie
 //
-//  Created by Enterprise Refactoring on 1/4/26.
+//  Created by Nick Demari on 1/4/26.
 //
 
 import Foundation
@@ -73,15 +73,30 @@ enum AppConstants {
         static let shadowRadius: CGFloat = 8
         static let standardPadding: CGFloat = 16
         static let compactPadding: CGFloat = 8
-        
+
         // Poster dimensions
         static let posterAspectRatio: CGFloat = 2/3
         static let compactPosterWidth: CGFloat = 120
         static let compactPosterHeight: CGFloat = 180
-        
+
         // Grid
         static let gridColumns = 3
         static let gridSpacing: CGFloat = 16
+
+        // MARK: - Image Heights
+        static let homeHeroHeight: CGFloat = 500
+        static let detailHeroHeight: CGFloat = 300
+        static let searchCardHeight: CGFloat = 200
+        static let trailerHeight: CGFloat = 200
+
+        // MARK: - Component Dimensions
+        static let playButtonSize: CGFloat = 60
+        static let actionButtonHeight: CGFloat = 50
+        static let itemRowHeight: CGFloat = 120
+        static let infoViewMaxWidth: CGFloat = 600
+
+        // MARK: - Cache Configuration
+        static let maxCacheSize: Int = 100
     }
     
     // MARK: - Animation

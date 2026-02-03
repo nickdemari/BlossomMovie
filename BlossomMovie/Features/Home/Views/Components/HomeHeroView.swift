@@ -2,7 +2,7 @@
 //  HomeHeroView.swift
 //  BlossomMovie
 //
-//  Created by Enterprise Refactoring on 1/4/26.
+//  Created by Nick Demari on 1/4/26.
 //
 
 import SwiftUI
@@ -16,31 +16,22 @@ struct HomeHeroView: View {
         GeometryReader { geometry in
             ZStack(alignment: .bottom) {
                 // Background Image
-                AsyncImage(url: URL(string: item.fullBackdropURL ?? "")) { image in
-                    image
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: geometry.size.width, height: geometry.size.height)
-                        .clipped()
-                } placeholder: {
-                    Rectangle()
-                        .fill(Color.gray.opacity(0.3))
-                        .overlay {
-                            ProgressView()
-                                .tint(.white)
-                        }
-                }
+                CachedAsyncImage(
+                    backdropURL: item.fullBackdropURL,
+                    width: geometry.size.width,
+                    height: geometry.size.height
+                )
                 
                 // Gradient Overlay
                 LinearGradient(
-                    stops: [
+                    gradient: Gradient(stops: [
                         .init(color: .clear, location: 0.6),
                         .init(color: .black.opacity(0.8), location: 1.0)
-                    ],
+                    ]),
                     startPoint: .top,
                     endPoint: .bottom
                 )
-                
+
                 // Content
                 VStack(spacing: AppConstants.Layout.compactPadding) {
                     Text(item.displayTitle)
@@ -68,8 +59,9 @@ struct HomeHeroView: View {
                 .padding(.bottom, AppConstants.Layout.standardPadding)
             }
         }
-        .frame(height: 500)
+        .frame(height: AppConstants.Layout.homeHeroHeight)
         .clipShape(RoundedRectangle(cornerRadius: AppConstants.Layout.cornerRadius))
+        .padding(.horizontal, AppConstants.Layout.standardPadding)
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier(AccessibilityIdentifiers.Home.heroImage)
     }

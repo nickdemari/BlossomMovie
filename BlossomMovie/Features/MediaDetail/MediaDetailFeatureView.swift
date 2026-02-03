@@ -2,7 +2,7 @@
 //  MediaDetailFeatureView.swift
 //  BlossomMovie
 //
-//  Created by Enterprise Refactoring on 1/4/26.
+//  Created by Nick Demari on 1/4/26.
 //
 
 import SwiftUI
@@ -13,23 +13,19 @@ struct MediaDetailFeatureView: View {
     @Environment(\.dependencies) private var dependencies
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel: MediaDetailViewModel?
-    @State private var downloadViewModel: DownloadViewModel?
-    
+
     var body: some View {
         MediaDetailView(
             mediaItem: mediaItem,
-            viewModel: viewModel,
-            downloadViewModel: downloadViewModel,
-            modelContext: modelContext
+            viewModel: viewModel
         )
-        .onAppear {
+        .task(id: mediaItem.id) {
+            // Initialize ViewModel once per unique media item
             if viewModel == nil {
                 viewModel = dependencies.createMediaDetailViewModel(for: mediaItem)
             }
-            if downloadViewModel == nil {
-                downloadViewModel = dependencies.createDownloadViewModel()
-                downloadViewModel?.loadDownloadedItems(from: modelContext)
-            }
+            // Load downloaded items to check if current item is downloaded
+            dependencies.downloadViewModel.loadDownloadedItems(from: modelContext)
         }
     }
 }

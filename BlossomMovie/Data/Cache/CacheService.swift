@@ -2,7 +2,7 @@
 //  CacheService.swift
 //  BlossomMovie
 //
-//  Created by Enterprise Refactoring on 1/4/26.
+//  Created by Nick Demari on 1/4/26.
 //
 
 import Foundation
@@ -22,7 +22,8 @@ final actor CacheService: CacheServiceProtocol {
     private struct CacheItem {
         let data: Data
         let expirationDate: Date
-        
+        var lastAccessedDate: Date
+
         var isExpired: Bool {
             return Date() > expirationDate
         }
@@ -31,24 +32,32 @@ final actor CacheService: CacheServiceProtocol {
     // MARK: - Properties
     private var cache: [String: CacheItem] = [:]
     private let defaultExpiration: TimeInterval
+    private let maxCacheSize: Int
+    private let logger: LoggerProtocol?
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
-    
+
     // MARK: - Initialization
-    init(defaultExpiration: TimeInterval = 300) { // 5 minutes default
+    init(defaultExpiration: TimeInterval = 300, maxCacheSize: Int = 100, logger: LoggerProtocol? = nil) { // 5 minutes default, 100 items max
         self.defaultExpiration = defaultExpiration
+        self.maxCacheSize = maxCacheSize
+        self.logger = logger
     }
     
     // MARK: - CacheServiceProtocol Implementation
     func get<T: Codable>(key: String) async -> T? {
         // Clean up expired items first
         await cleanupExpiredItems()
-        
-        guard let item = cache[key], !item.isExpired else {
+
+        guard var item = cache[key], !item.isExpired else {
             cache.removeValue(forKey: key)
             return nil
         }
-        
+
+        // Update last accessed date for LRU tracking
+        item.lastAccessedDate = Date()
+        cache[key] = item
+
         do {
             return try decoder.decode(T.self, from: item.data)
         } catch {
@@ -62,11 +71,17 @@ final actor CacheService: CacheServiceProtocol {
         do {
             let data = try encoder.encode(value)
             let expirationDate = Date().addingTimeInterval(defaultExpiration)
-            let item = CacheItem(data: data, expirationDate: expirationDate)
+            let item = CacheItem(
+                data: data,
+                expirationDate: expirationDate,
+                lastAccessedDate: Date()
+            )
             cache[key] = item
+
+            // Evict least recently used items if needed
+            await evictLRUIfNeeded()
         } catch {
-            // Handle encoding error - could log this
-            print("Failed to encode cache item for key: \(key), error: \(error)")
+            logger?.error("Failed to encode cache item for key: \(key), error: \(error)")
         }
     }
     
@@ -83,8 +98,24 @@ final actor CacheService: CacheServiceProtocol {
         let expiredKeys = cache.compactMap { key, item in
             item.isExpired ? key : nil
         }
-        
+
         for key in expiredKeys {
+            cache.removeValue(forKey: key)
+        }
+    }
+
+    /// Evict least recently used items when cache exceeds max size
+    private func evictLRUIfNeeded() async {
+        guard cache.count > maxCacheSize else { return }
+
+        // Sort by lastAccessedDate, oldest first
+        let sortedKeys = cache.sorted {
+            $0.value.lastAccessedDate < $1.value.lastAccessedDate
+        }.map { $0.key }
+
+        // Remove oldest 20% when limit exceeded
+        let itemsToRemove = max(1, maxCacheSize / 5)
+        for key in sortedKeys.prefix(itemsToRemove) {
             cache.removeValue(forKey: key)
         }
     }
@@ -92,23 +123,26 @@ final actor CacheService: CacheServiceProtocol {
 
 /// Persistent cache service using UserDefaults
 final class PersistentCacheService: CacheServiceProtocol {
-    
+
     // MARK: - Properties
     private let userDefaults: UserDefaults
     private let keyPrefix: String
     private let defaultExpiration: TimeInterval
+    private let logger: LoggerProtocol?
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
-    
+
     // MARK: - Initialization
     init(
         userDefaults: UserDefaults = .standard,
         keyPrefix: String = "BlossomCache_",
-        defaultExpiration: TimeInterval = 3600 // 1 hour default for persistent cache
+        defaultExpiration: TimeInterval = 3600, // 1 hour default for persistent cache
+        logger: LoggerProtocol? = nil
     ) {
         self.userDefaults = userDefaults
         self.keyPrefix = keyPrefix
         self.defaultExpiration = defaultExpiration
+        self.logger = logger
     }
     
     // MARK: - CacheServiceProtocol Implementation
@@ -142,11 +176,11 @@ final class PersistentCacheService: CacheServiceProtocol {
             let prefixedKey = keyPrefix + key
             let expirationKey = prefixedKey + "_expiration"
             let expirationTimestamp = Date().addingTimeInterval(defaultExpiration).timeIntervalSince1970
-            
+
             userDefaults.set(data, forKey: prefixedKey)
             userDefaults.set(expirationTimestamp, forKey: expirationKey)
         } catch {
-            print("Failed to encode persistent cache item for key: \(key), error: \(error)")
+            logger?.error("Failed to encode persistent cache item for key: \(key), error: \(error)")
         }
     }
     

@@ -2,7 +2,7 @@
 //  MediaRepository.swift
 //  BlossomMovie
 //
-//  Created by Enterprise Refactoring on 1/4/26.
+//  Created by Nick Demari on 1/4/26.
 //
 
 import Foundation
@@ -88,10 +88,19 @@ final class MediaRepository: MediaRepositoryProtocol {
         guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return []
         }
-        
+
+        // Check cache first
+        let cacheKey = "search_\(mediaType.rawValue)_\(query.lowercased())"
+        if let cachedItems: [MediaItem] = await cacheService.get(key: cacheKey) {
+            return cachedItems
+        }
+
         let endpoint = TMDBEndpoint.search(query: query, mediaType: mediaType)
         let response: TMDBResponse<MediaItem> = try await networkService.request(endpoint)
-        
+
+        // Cache the result
+        await cacheService.set(key: cacheKey, value: response.results)
+
         return response.results
     }
     

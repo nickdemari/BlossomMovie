@@ -2,22 +2,22 @@
 //  MediaDetailHeaderView.swift
 //  BlossomMovie
 //
-//  Created by Enterprise Refactoring on 1/4/26.
+//  Created by Nick Demari on 1/4/26.
 //
 
 import SwiftUI
 
 struct MediaDetailHeaderView: View {
     let mediaItem: MediaItem
-    let viewModel: MediaDetailViewModel?
-    
+    let releaseInfo: String
+
     var body: some View {
         VStack(alignment: .leading, spacing: AppConstants.Layout.compactPadding) {
             Text(mediaItem.displayTitle)
                 .font(.title.bold())
                 .foregroundColor(.primary)
-            
-            Text(viewModel?.formattedReleaseInfo ?? "")
+
+            Text(releaseInfo)
                 .font(.subheadline)
                 .foregroundColor(.secondary)
             
@@ -55,7 +55,7 @@ struct MediaDetailHeaderView: View {
 #Preview {
     MediaDetailHeaderView(
         mediaItem: MediaItem.previewItems[0],
-        viewModel: nil
+        releaseInfo: "2024-01-15 • Rating: 8.5/10"
     )
     .padding()
 }

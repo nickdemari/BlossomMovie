@@ -2,34 +2,29 @@
 //  MediaDetailHeroView.swift
 //  BlossomMovie
 //
-//  Created by Enterprise Refactoring on 1/4/26.
+//  Created by Nick Demari on 1/4/26.
 //
 
 import SwiftUI
 
 struct MediaDetailHeroView: View {
     let mediaItem: MediaItem
-    let viewModel: MediaDetailViewModel?
-    
+    let hasTrailer: Bool
+    let isLoadingTrailer: Bool
+    let onPlayTapped: () async -> Void
+
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .center) {
                 // Background Image
-                AsyncImage(url: URL(string: mediaItem.fullBackdropURL ?? mediaItem.fullPosterURL ?? "")) { image in
-                    image
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: geometry.size.width, height: geometry.size.height)
-                        .clipped()
-                } placeholder: {
-                    Rectangle()
-                        .fill(Color.gray.opacity(0.3))
-                        .overlay {
-                            ProgressView()
-                                .tint(.white)
-                        }
-                }
-                
+                CachedAsyncImage(
+                    url: URL(string: mediaItem.fullBackdropURL ?? mediaItem.fullPosterURL ?? ""),
+                    width: geometry.size.width,
+                    height: geometry.size.height,
+                    contentMode: .fill,
+                    cornerRadius: 0
+                )
+
                 // Gradient Overlay
                 LinearGradient(
                     stops: [
@@ -39,12 +34,16 @@ struct MediaDetailHeroView: View {
                     startPoint: .top,
                     endPoint: .bottom
                 )
-                
+
                 // Play Button (if video available)
-                MediaDetailPlayButton(viewModel: viewModel)
+                MediaDetailPlayButton(
+                    hasTrailer: hasTrailer,
+                    isLoadingTrailer: isLoadingTrailer,
+                    onPlayTapped: onPlayTapped
+                )
             }
         }
-        .frame(height: 300)
+        .frame(height: AppConstants.Layout.detailHeroHeight)
         .clipShape(RoundedRectangle(cornerRadius: 0))
     }
 }
@@ -52,7 +51,9 @@ struct MediaDetailHeroView: View {
 #Preview {
     MediaDetailHeroView(
         mediaItem: MediaItem.previewItems[0],
-        viewModel: nil
+        hasTrailer: true,
+        isLoadingTrailer: false,
+        onPlayTapped: {}
     )
     .frame(height: 300)
 }

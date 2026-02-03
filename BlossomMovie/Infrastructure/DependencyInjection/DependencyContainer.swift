@@ -2,7 +2,7 @@
 //  DependencyContainer.swift
 //  BlossomMovie
 //
-//  Created by Enterprise Refactoring on 1/4/26.
+//  Created by Nick Demari on 1/4/26.
 //
 
 import Foundation
@@ -11,7 +11,7 @@ import SwiftUI
 /// Dependency injection container
 @MainActor
 final class DependencyContainer: ObservableObject {
-    
+
     // MARK: - Singleton
     static let shared = DependencyContainer()
     
@@ -20,6 +20,7 @@ final class DependencyContainer: ObservableObject {
         ConfigurationManager.shared
     }()
     
+    /// Logger service
     lazy var logger: LoggerProtocol = {
         #if DEBUG
         return Logger(category: "BlossomMovie", minimumLogLevel: .debug)
@@ -28,14 +29,21 @@ final class DependencyContainer: ObservableObject {
         #endif
     }()
     
+    /// Cache service
     lazy var cacheService: CacheServiceProtocol = {
-        CacheService(defaultExpiration: configurationManager.configuration?.cacheTimeout ?? 300)
+        CacheService(
+            defaultExpiration: configurationManager.configuration?.cacheTimeout ?? 300,
+            maxCacheSize: AppConstants.Layout.maxCacheSize,
+            logger: logger
+        )
     }()
     
+    /// Persistent cache service
     lazy var persistentCacheService: CacheServiceProtocol = {
-        PersistentCacheService()
+        PersistentCacheService(logger: logger)
     }()
     
+    /// Network service
     lazy var networkService: NetworkServiceProtocol = {
         NetworkService(
             configurationManager: configurationManager,
@@ -43,6 +51,7 @@ final class DependencyContainer: ObservableObject {
         )
     }()
     
+    /// Media repository
     lazy var mediaRepository: MediaRepositoryProtocol = {
         MediaRepository(
             networkService: networkService,
@@ -72,14 +81,13 @@ final class DependencyContainer: ObservableObject {
             logger: logger
         )
     }()
-    
+
+    lazy var downloadViewModel: DownloadViewModel = {
+        DownloadViewModel(logger: logger)
+    }()
+
     // MARK: - Initialization
     private init() {}
-    
-    // MARK: - Public Methods
-    func createDownloadViewModel() -> DownloadViewModel {
-        return DownloadViewModel(logger: logger)
-    }
     
     func createMediaDetailViewModel(for mediaItem: MediaItem) -> MediaDetailViewModel {
         return MediaDetailViewModel(

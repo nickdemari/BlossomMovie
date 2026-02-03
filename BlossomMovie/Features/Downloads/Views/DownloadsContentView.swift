@@ -2,7 +2,7 @@
 //  DownloadsContentView.swift
 //  BlossomMovie
 //
-//  Created by Enterprise Refactoring on 1/4/26.
+//  Created by Nick Demari on 1/4/26.
 //
 
 import SwiftUI
@@ -32,7 +32,7 @@ struct DownloadsContentView: View {
 
 #Preview {
     DownloadsContentView(
-        viewModel: DependencyContainer.shared.createDownloadViewModel(),
+        viewModel: DependencyContainer.shared.downloadViewModel,
         onItemTapped: { _ in },
         onItemDeleted: { _ in }
     )

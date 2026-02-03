@@ -2,47 +2,43 @@
 //  DownloadsView.swift
 //  BlossomMovie
 //
-//  Created by Enterprise Refactoring on 1/4/26.
+//  Created by Nick Demari on 1/4/26.
 //
 
 import SwiftUI
 import SwiftData
 
 struct DownloadsView: View {
+    @Environment(\.dependencies) private var dependencies
+    @Environment(\.modelContext) private var modelContext
     @Binding var navigationPath: NavigationPath
-    @Binding var downloadViewModel: DownloadViewModel?
-    let modelContext: ModelContext
-    
+
     var body: some View {
         Group {
-            if let viewModel = downloadViewModel {
-                if viewModel.isLoading {
-                    LoadingView()
-                } else if viewModel.hasDownloads {
-                    DownloadsContentView(
-                        viewModel: viewModel,
-                        onItemTapped: { item in
-                            navigationPath.append(item)
-                        },
-                        onItemDeleted: { item in
-                            viewModel.removeFromDownloads(item, context: modelContext)
-                        }
-                    )
-                } else {
-                    DownloadsEmptyStateView()
-                }
-            } else {
+            if dependencies.downloadViewModel.isLoading {
                 LoadingView()
+            } else if dependencies.downloadViewModel.hasDownloads {
+                DownloadsContentView(
+                    viewModel: dependencies.downloadViewModel,
+                    onItemTapped: { item in
+                        navigationPath.append(item)
+                    },
+                    onItemDeleted: { item in
+                        dependencies.downloadViewModel.removeFromDownloads(item, context: modelContext)
+                    }
+                )
+            } else {
+                DownloadsEmptyStateView()
             }
         }
         .navigationTitle(AppConstants.UI.downloadsTitle)
         .navigationBarTitleDisplayMode(.large)
-        .alert("Error", isPresented: .constant(downloadViewModel?.errorMessage != nil)) {
+        .alert("Error", isPresented: .constant(dependencies.downloadViewModel.errorMessage != nil)) {
             Button("OK") {
-                downloadViewModel?.clearError()
+                dependencies.downloadViewModel.clearError()
             }
         } message: {
-            if let errorMessage = downloadViewModel?.errorMessage {
+            if let errorMessage = dependencies.downloadViewModel.errorMessage {
                 Text(errorMessage)
             }
         }
@@ -51,14 +47,14 @@ struct DownloadsView: View {
 }
 
 #Preview {
-    NavigationStack {
-        DownloadsView(
-            navigationPath: .constant(NavigationPath()),
-            downloadViewModel: .constant(DependencyContainer.shared.createDownloadViewModel()),
-            modelContext: ModelContext(
-                try! ModelContainer(for: MediaItem.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
-            )
-        )
+    let previewContainer = try? ModelContainer(
+        for: MediaItem.self,
+        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+    )
+
+    return NavigationStack {
+        DownloadsView(navigationPath: .constant(NavigationPath()))
     }
     .injectDependencies()
+    .modelContainer(previewContainer ?? (try! ModelContainer(for: MediaItem.self)))
 }

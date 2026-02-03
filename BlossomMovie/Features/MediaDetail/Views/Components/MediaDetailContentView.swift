@@ -2,44 +2,46 @@
 //  MediaDetailContentView.swift
 //  BlossomMovie
 //
-//  Created by Enterprise Refactoring on 1/4/26.
+//  Created by Nick Demari on 1/4/26.
 //
 
 import SwiftUI
-import SwiftData
 
 struct MediaDetailContentView: View {
     let mediaItem: MediaItem
-    let viewModel: MediaDetailViewModel?
-    let downloadViewModel: DownloadViewModel?
-    let modelContext: ModelContext
-    
+    let releaseInfo: String
+    let hasTrailer: Bool
+    let isDownloaded: Bool
+    let youtubeEmbedURL: URL?
+    let onPlayTrailerTapped: () -> Void
+    let onDownloadTapped: () -> Void
+
     var body: some View {
         VStack(alignment: .leading, spacing: AppConstants.Layout.standardPadding) {
             // Title and Rating
             MediaDetailHeaderView(
                 mediaItem: mediaItem,
-                viewModel: viewModel
+                releaseInfo: releaseInfo
             )
-            
+
             // Action Buttons
             MediaDetailActionButtonsView(
-                mediaItem: mediaItem,
-                viewModel: viewModel,
-                downloadViewModel: downloadViewModel,
-                modelContext: modelContext
+                hasTrailer: hasTrailer,
+                isDownloaded: isDownloaded,
+                onPlayTrailerTapped: onPlayTrailerTapped,
+                onDownloadTapped: onDownloadTapped
             )
-            
+
             // Overview
             if let overview = mediaItem.overview, !overview.isEmpty {
                 MediaDetailOverviewView(overview: overview)
             }
-            
+
             // Additional Info
             MediaDetailInfoView(mediaItem: mediaItem)
-            
+
             // YouTube Video (if available)
-            if let viewModel = viewModel, let youtubeURL = viewModel.youtubeEmbedURL {
+            if let youtubeURL = youtubeEmbedURL {
                 MediaDetailTrailerView(youtubeURL: youtubeURL)
             }
         }
@@ -50,13 +52,13 @@ struct MediaDetailContentView: View {
     ScrollView {
         MediaDetailContentView(
             mediaItem: MediaItem.previewItems[0],
-            viewModel: nil,
-            downloadViewModel: nil,
-            modelContext: ModelContext(
-                try! ModelContainer(for: MediaItem.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
-            )
+            releaseInfo: "2024-01-15 • Rating: 8.5/10",
+            hasTrailer: true,
+            isDownloaded: false,
+            youtubeEmbedURL: nil,
+            onPlayTrailerTapped: {},
+            onDownloadTapped: {}
         )
         .padding()
     }
-    .injectDependencies()
 }

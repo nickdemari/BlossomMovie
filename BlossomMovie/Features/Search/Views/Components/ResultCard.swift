@@ -2,7 +2,7 @@
 //  SearchResultCard.swift
 //  BlossomMovie
 //
-//  Created by Enterprise Refactoring on 1/4/26.
+//  Created by Nick Demari on 1/4/26.
 //
 
 import SwiftUI
@@ -13,20 +13,10 @@ struct SearchResultCard: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: AppConstants.Layout.compactPadding) {
-            AsyncImage(url: URL(string: item.fullPosterURL ?? "")) { image in
-                image
-                    .resizable()
-                    .scaledToFit()
-            } placeholder: {
-                Rectangle()
-                    .fill(Color.gray.opacity(0.3))
-                    .overlay {
-                        ProgressView()
-                            .scaleEffect(0.8)
-                    }
-            }
-            .frame(height: 200)
-            .clipShape(RoundedRectangle(cornerRadius: AppConstants.Layout.cornerRadius))
+            CachedAsyncImage(
+                posterURL: item.fullPosterURL,
+                height: AppConstants.Layout.searchCardHeight
+            )
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.displayTitle)

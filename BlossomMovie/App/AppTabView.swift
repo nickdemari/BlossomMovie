@@ -2,7 +2,7 @@
 //  AppTabView.swift
 //  BlossomMovie
 //
-//  Created by Enterprise Refactoring on 1/4/26.
+//  Created by Nick Demari on 1/4/26.
 //
 
 import SwiftUI
@@ -14,17 +14,17 @@ struct AppTabView: View {
                 HomeFeatureView()
             }
             .accessibilityIdentifier(AccessibilityIdentifiers.Tabs.homeTab)
-            
+
             Tab(AppConstants.UI.upcomingTitle, systemImage: AppConstants.UI.upcomingIcon) {
                 UpcomingFeatureView()
             }
             .accessibilityIdentifier(AccessibilityIdentifiers.Tabs.upcomingTab)
-            
+
             Tab(AppConstants.UI.searchTitle, systemImage: AppConstants.UI.searchIcon) {
                 SearchFeatureView()
             }
             .accessibilityIdentifier(AccessibilityIdentifiers.Tabs.searchTab)
-            
+
             Tab(AppConstants.UI.downloadsTitle, systemImage: AppConstants.UI.downloadsIcon) {
                 DownloadsFeatureView()
             }

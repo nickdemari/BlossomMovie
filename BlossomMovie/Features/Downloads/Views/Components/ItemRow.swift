@@ -2,7 +2,7 @@
 //  DownloadItemRow.swift
 //  BlossomMovie
 //
-//  Created by Enterprise Refactoring on 1/4/26.
+//  Created by Nick Demari on 1/4/26.
 //
 
 import SwiftUI
@@ -88,6 +88,7 @@ struct DownloadItemRow: View {
                 )
             }
         }
+        .padding(AppConstants.Layout.standardPadding)
         .contentShape(Rectangle())
         .onTapGesture(perform: onTap)
         .background(
@@ -119,7 +120,6 @@ struct DownloadItemRow: View {
             )
             .listRowSeparator(.hidden)
             .listRowInsets(EdgeInsets())
-            .padding()
         }
     }
     .listStyle(.plain)

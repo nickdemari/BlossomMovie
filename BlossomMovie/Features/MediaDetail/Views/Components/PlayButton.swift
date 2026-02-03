@@ -2,20 +2,22 @@
 //  MediaDetailPlayButton.swift
 //  BlossomMovie
 //
-//  Created by Enterprise Refactoring on 1/4/26.
+//  Created by Nick Demari on 1/4/26.
 //
 
 import SwiftUI
 
 struct MediaDetailPlayButton: View {
-    let viewModel: MediaDetailViewModel?
-    
+    let hasTrailer: Bool
+    let isLoadingTrailer: Bool
+    let onPlayTapped: () async -> Void
+
     var body: some View {
         Group {
-            if let viewModel = viewModel, viewModel.hasTrailer {
+            if hasTrailer {
                 Button {
                     Task {
-                        await viewModel.loadTrailer()
+                        await onPlayTapped()
                     }
                 } label: {
                     Image(systemName: "play.circle.fill")
@@ -23,14 +25,14 @@ struct MediaDetailPlayButton: View {
                         .foregroundColor(.white)
                         .shadow(color: .black.opacity(0.3), radius: 8)
                 }
-            } else if let viewModel = viewModel, viewModel.isLoadingTrailer {
+            } else if isLoadingTrailer {
                 ProgressView()
                     .scaleEffect(1.5)
                     .tint(.white)
             } else {
                 Button {
                     Task {
-                        await viewModel?.loadTrailer()
+                        await onPlayTapped()
                     }
                 } label: {
                     Image(systemName: "play.circle")
@@ -46,7 +48,11 @@ struct MediaDetailPlayButton: View {
 #Preview {
     ZStack {
         Color.black
-        MediaDetailPlayButton(viewModel: nil)
+        MediaDetailPlayButton(
+            hasTrailer: true,
+            isLoadingTrailer: false,
+            onPlayTapped: {}
+        )
     }
     .frame(height: 300)
 }

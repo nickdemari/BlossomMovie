@@ -2,7 +2,7 @@
 //  NetworkService.swift
 //  BlossomMovie
 //
-//  Created by Enterprise Refactoring on 1/4/26.
+//  Created by Nick Demari on 1/4/26.
 //
 
 import Foundation
@@ -33,15 +33,16 @@ final class NetworkService: NetworkServiceProtocol {
     
     // MARK: - NetworkServiceProtocol Implementation
     func request<T: Codable>(_ endpoint: Endpoint) async throws -> T {
-        guard let configuration = configurationManager.configuration else {
+        let configuration = await MainActor.run { configurationManager.configuration }
+        guard let configuration = configuration else {
             throw NetworkError.configurationNotAvailable
         }
-        
+
         let url = try endpoint.url(with: configuration)
         var request = URLRequest(url: url)
         request.httpMethod = endpoint.method.rawValue
         request.allHTTPHeaderFields = endpoint.headers
-        
+
         if configuration.enableLogging {
             logger.log("🌐 Network Request: \(endpoint.method.rawValue) \(url)", level: .info)
         }
@@ -114,21 +115,62 @@ enum NetworkError: LocalizedError {
     case httpError(statusCode: Int, data: Data)
     case decodingError(Error)
     case requestFailed(Error)
-    
+
     var errorDescription: String? {
         switch self {
         case .configurationNotAvailable:
-            return "API configuration is not available"
+            return "Unable to load API settings. Please check your configuration file."
         case .invalidURL:
-            return "Invalid URL"
+            return "The requested URL is invalid. Please try again later."
         case .invalidResponse:
-            return "Invalid response"
+            return "Received an unexpected response from the server."
         case .httpError(let statusCode, _):
-            return "HTTP error with status code: \(statusCode)"
-        case .decodingError(let error):
-            return "Decoding error: \(error.localizedDescription)"
+            return httpErrorMessage(for: statusCode)
+        case .decodingError:
+            return "Unable to process server data. The content may be unavailable."
         case .requestFailed(let error):
-            return "Request failed: \(error.localizedDescription)"
+            // Check for common network errors
+            let nsError = error as NSError
+            if nsError.domain == NSURLErrorDomain {
+                return urlErrorMessage(for: nsError.code)
+            }
+            return "Network request failed. Please check your connection."
+        }
+    }
+
+    /// Helper method for HTTP status codes
+    private func httpErrorMessage(for statusCode: Int) -> String {
+        switch statusCode {
+        case 400:
+            return "Bad request. Please try again with different search terms."
+        case 401:
+            return "Authentication failed. Please check your API key."
+        case 403:
+            return "Access forbidden. Your API key may have insufficient permissions."
+        case 404:
+            return "The requested content was not found."
+        case 429:
+            return "Too many requests. Please try again in a few moments."
+        case 500...599:
+            return "Server error. Please try again later."
+        default:
+            return "Request failed with status code \(statusCode)."
+        }
+    }
+
+    /// Helper method for URL errors
+    private func urlErrorMessage(for code: Int) -> String {
+        switch code {
+        case NSURLErrorNotConnectedToInternet:
+            return "No internet connection. Please check your network settings."
+        case NSURLErrorTimedOut:
+            return "Request timed out. Please try again."
+        case NSURLErrorCannotFindHost, NSURLErrorCannotConnectToHost:
+            return "Cannot connect to server. Please try again later."
+        case NSURLErrorNetworkConnectionLost:
+            return "Network connection lost. Please try again."
+        default:
+            return "Network error occurred. Please check your connection."
         }
     }
 }

@@ -2,17 +2,17 @@
 //  ConfigurationManager.swift
 //  BlossomMovie
 //
-//  Created by Enterprise Refactoring on 1/4/26.
+//  Created by Nick Demari on 1/4/26.
 //
 
 import Foundation
 
 /// Environment types for configuration
-enum Environment: String, CaseIterable {
+enum ConfigurationEnvironment: String, CaseIterable {
     case development = "development"
     case production = "production"
-    
-    static var current: Environment {
+
+    static var current: ConfigurationEnvironment {
         #if DEBUG
         return .development
         #else
@@ -49,11 +49,11 @@ final class ConfigurationManager: ObservableObject {
     @Published private(set) var configuration: APIConfiguration?
     @Published private(set) var isLoaded = false
     @Published private(set) var error: ConfigurationError?
-    
-    private let environment: Environment
-    
+
+    private let environment: ConfigurationEnvironment
+
     // MARK: - Initialization
-    private init(environment: Environment = .current) {
+    private init(environment: ConfigurationEnvironment = .current) {
         self.environment = environment
         Task {
             await loadConfiguration()
@@ -64,29 +64,21 @@ final class ConfigurationManager: ObservableObject {
     func loadConfiguration() async {
         do {
             let config = try await loadConfigurationFromBundle()
-            await MainActor.run {
-                self.configuration = config
-                self.isLoaded = true
-                self.error = nil
-            }
+            self.configuration = config
+            self.isLoaded = true
+            self.error = nil
         } catch let configError as ConfigurationError {
-            await MainActor.run {
-                self.error = configError
-                self.isLoaded = false
-            }
+            self.error = configError
+            self.isLoaded = false
         } catch {
-            await MainActor.run {
-                self.error = .unknownError(error)
-                self.isLoaded = false
-            }
+            self.error = .unknownError(error)
+            self.isLoaded = false
         }
     }
     
     func reloadConfiguration() async {
-        await MainActor.run {
-            self.isLoaded = false
-            self.error = nil
-        }
+        self.isLoaded = false
+        self.error = nil
         await loadConfiguration()
     }
     

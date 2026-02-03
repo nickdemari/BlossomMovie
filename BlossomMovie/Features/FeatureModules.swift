@@ -2,7 +2,7 @@
 //  FeatureModules.swift
 //  BlossomMovie
 //
-//  Created by Enterprise Refactoring on 1/4/26.
+//  Created by Nick Demari on 1/4/26.
 //
 
 import Foundation
@@ -61,12 +61,6 @@ import Foundation
 /// └── DownloadsFeatureView → MediaDetailFeatureView
 /// ```
 
-// MARK: - Feature Module Protocol
-protocol FeatureModule {
-    associatedtype FeatureView: View
-    static var featureView: FeatureView { get }
-}
-
 // MARK: - Feature Registration
 enum AppFeatures: String, CaseIterable {
     case home = "Home"
@@ -107,12 +101,3 @@ extension AppFeatures {
         }
     }
 }
-
-import SwiftUI
-
-// This ensures all feature views are available for import
-typealias HomeFeature = HomeFeatureView
-typealias SearchFeature = SearchFeatureView
-typealias UpcomingFeature = UpcomingFeatureView
-typealias DownloadsFeature = DownloadsFeatureView
-typealias MediaDetailFeature = MediaDetailFeatureView

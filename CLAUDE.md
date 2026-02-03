@@ -26,6 +26,8 @@ Before building, you must configure API keys:
 
 ## Build Commands
 
+### Using xcodebuild (Traditional)
+
 **Build the project:**
 ```bash
 xcodebuild -project BlossomMovie.xcodeproj -scheme BlossomMovie -configuration Debug build
@@ -36,15 +38,38 @@ xcodebuild -project BlossomMovie.xcodeproj -scheme BlossomMovie -configuration D
 xcodebuild test -project BlossomMovie.xcodeproj -scheme BlossomMovie -destination 'platform=iOS Simulator,name=iPhone 15'
 ```
 
-**Run a single test:**
-```bash
-xcodebuild test -project BlossomMovie.xcodeproj -scheme BlossomMovie -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:BlossomMovieTests/<TestClassName>/<testMethodName>
-```
+**Note:** There is currently no separate test target. Tests are located in `Tests_Temp/` but may need to be integrated into the main project structure.
 
 **Clean build:**
 ```bash
 xcodebuild clean -project BlossomMovie.xcodeproj -scheme BlossomMovie
 ```
+
+### Using MCP Tools (Recommended)
+
+The XcodeBuildMCP server provides convenient commands for building and running:
+
+**Build for simulator:**
+```bash
+mcp-cli call XcodeBuildMCP/build_sim '{"scheme": "BlossomMovie"}'
+```
+
+**Build and run on simulator:**
+```bash
+mcp-cli call XcodeBuildMCP/build_run_sim '{"scheme": "BlossomMovie"}'
+```
+
+**List available simulators:**
+```bash
+mcp-cli call XcodeBuildMCP/list_sims '{}'
+```
+
+**Take screenshot:**
+```bash
+mcp-cli call XcodeBuildMCP/screenshot '{"outputPath": "/path/to/screenshot.png"}'
+```
+
+Always run `mcp-cli info XcodeBuildMCP/<tool>` first to check parameter requirements.
 
 ## Architecture
 
@@ -58,16 +83,16 @@ BlossomMovie/
 ├── Features/                - Feature modules (Home, Search, Upcoming, Downloads, MediaDetail)
 │   └── {Feature}/
 │       ├── FeatureView.swift
+│       ├── ViewModel.swift
 │       └── Views/
 │           ├── Components/
 │           └── ...
-├── Presentation/ViewModels/ - Centralized ViewModels
 ├── Data/                    - Data layer (Network, Repository, Cache)
 ├── Domain/Models/           - Domain models
 ├── Infrastructure/          - Cross-cutting concerns (DI, Logging, Constants)
 ├── Configuration/           - API configuration
-├── Shared/UIComponents/     - Reusable UI components
-└── Tests/                   - Test files and mocks
+├── Shared/UIComponents/     - Reusable UI components (CachedAsyncImage, MediaPosterView, etc.)
+└── Tests_Temp/              - Test files and mocks
 ```
 
 ### Layers
@@ -99,7 +124,7 @@ BlossomMovie/
   - `PersistentCacheService` - UserDefaults-based persistence
 
 **4. Presentation Layer**
-- ViewModels in `Presentation/ViewModels/`
+- ViewModels are located within their respective feature folders
   - All use `@MainActor` for thread safety
   - All use `@Observable` macro for reactive updates
   - State management through enums (LoadingState, SearchState)
@@ -107,17 +132,22 @@ BlossomMovie/
 
 **5. Features Layer**
 
-Each feature follows consistent structure:
+Each feature follows a consistent structure with self-contained ViewModels:
 ```
-Features/{Home,Search,Upcoming,Downloads,MediaDetail}/
-  ├── FeatureView.swift - Entry point with NavigationStack, injects ViewModel
+Features/{Feature}/
+  ├── {Feature}FeatureView.swift - Entry point with NavigationStack, injects ViewModel
+  ├── {Feature}ViewModel.swift - Feature-specific ViewModel with business logic
   ├── Views/
   │   ├── {Feature}View.swift - Main view composition, manages navigation state
-  │   ├── ContentView.swift - Business logic and loading states
-  │   └── Components/ - Reusable UI components
+  │   ├── {Feature}ContentView.swift - Business logic and loading states
+  │   └── Components/ - Feature-specific UI components
 ```
 
-Features are tab-based: Home, Upcoming, Search, Downloads
+**Naming variations:**
+- Search: Uses `ResultsView.swift` instead of ContentView
+- MediaDetail: Uses `DetailView.swift` as the main view
+
+Tab-based features: Home, Upcoming, Search, Downloads
 
 ## Key Design Patterns
 
@@ -132,46 +162,70 @@ Features are tab-based: Home, Upcoming, Search, Downloads
 - Single source of truth for data operations
 
 **MVVM with Clean Architecture:**
-- ViewModels use `@Observable` for state management
+- ViewModels use `@Observable` macro for state management (iOS 17+)
+  - Replaces `@Published` and `ObservableObject` pattern
+  - Automatic property observation without explicit publishers
+  - All ViewModels also use `@MainActor` for thread-safe UI updates
 - Clear separation: View → ViewModel → Repository → Network
 - Feature-based organization with self-contained modules
 
 ## Data Persistence
 
 **SwiftData:**
-- `MediaItem` model marked with `@Model` decorator
-- Unique constraint on `id` field
-- ModelContainer initialized in `AppBlossomMovieApp.swift`
-- Supports saving, sorting, and deletion
+- `MediaItem` model marked with `@Model` decorator for SwiftData persistence
+- Unique constraint on `id` field via `@Attribute(.unique)` to prevent duplicates
+- ModelContainer initialized in `BlossomMovieApp.swift` at app startup
+- Used by Downloads feature to save movies/shows for offline viewing
+- `DownloadViewModel` handles all SwiftData operations:
+  - Uses `FetchDescriptor` for querying with sorting
+  - Uses `#Predicate` macro for type-safe filtering (iOS 17+)
+  - All operations require `ModelContext` passed from views
+  - CRUD: `context.insert()`, `context.fetch()`, `context.delete()`, `context.save()`
+- In-memory container available for SwiftUI previews
 
 ## Testing
 
 **Test Infrastructure:**
 - Swift Testing framework (using `@Test` macro)
 - Protocol-based mocking (no third-party frameworks)
-- Mock files in `Tests/Mocks/MockServices.swift`
-  - `MockMediaRepository` implements `MediaRepositoryProtocol`
-  - `MockNetworkService` for network testing
-  - Control flags: `shouldSucceed`, `mockData`
+- Test files located in `Tests_Temp/` directory
+- Mock services in `Tests_Temp/Mocks/MockServices.swift`:
+  - `MockMediaRepository` - implements `MediaRepositoryProtocol` with control flags (`shouldSucceed`, `mockMovies`, `mockTVShows`)
+  - `MockNetworkService` - implements `NetworkServiceProtocol` for network testing
+  - `MockCacheService` - actor-based cache mock for testing
+  - `MockConfigurationManager` - configuration mock for testing
+  - `MockLogger` - available in production code at `Infrastructure/Logger/Logger.swift` for testing
 
 **Running Tests:**
 - Tests require `@MainActor` annotation when testing ViewModels
-- Preview data available in domain models for SwiftUI previews
+- Use Swift Testing's `@Test` and `@Suite` macros for test organization
+- Preview data available in domain models: `MediaItem.previewItems`
 
 ## Adding a New Feature
 
 1. Create feature folder: `Features/{FeatureName}/`
-2. Create `Features/{FeatureName}/FeatureView.swift` - Entry point with NavigationStack
-3. Create `Features/{FeatureName}/Views/{FeatureName}View.swift` - Main view using DependencyContainer from environment
-4. Create `Features/{FeatureName}/Views/ContentView.swift` - Business logic for loading states
-5. Create components in `Features/{FeatureName}/Views/Components/` - Reusable UI elements
-6. Create `Presentation/ViewModels/{FeatureName}ViewModel.swift` - ViewModel with `@Observable` and `@MainActor`
+2. Create `Features/{FeatureName}/{FeatureName}FeatureView.swift` - Entry point with NavigationStack
+3. Create `Features/{FeatureName}/{FeatureName}ViewModel.swift` - ViewModel with `@Observable` and `@MainActor`
+4. Create `Features/{FeatureName}/Views/{FeatureName}View.swift` - Main view using DependencyContainer from environment
+5. Create `Features/{FeatureName}/Views/{FeatureName}ContentView.swift` - Business logic for loading states
+6. Create components in `Features/{FeatureName}/Views/Components/` - Reusable UI elements
 7. Register ViewModel in `Infrastructure/DependencyInjection/DependencyContainer.swift`
 8. If new data operations needed:
    - Add method to `MediaRepositoryProtocol` in `Data/Repositories/MediaRepository.swift`
    - Implement in `MediaRepository`
    - Add endpoint to `TMDBEndpoint` enum in `Data/Network/NetworkService.swift`
 9. Add tab to `App/AppTabView.swift` if it's a main feature
+
+## Shared UI Components
+
+**Location:** `Shared/UIComponents/`
+
+- `CachedAsyncImage.swift` - Reusable async image component with placeholder, error handling, and convenience initializers for poster/backdrop images
+- `MediaPosterView.swift` - Movie/TV show poster display component
+- `ButtonStyles.swift` - Custom button styling
+- `ErrorView.swift` - Error state UI component
+- `LoadingView.swift` - Loading indicator component
+- `WebView.swift` - Web content embedding (UIViewRepresentable)
 
 ## Error Handling
 
@@ -197,6 +251,10 @@ Configuration includes:
 
 All domain models include static preview data for SwiftUI previews. Access via:
 ```swift
-MediaItem.preview
-MediaItem.previewList
+MediaItem.previewItems  // Array of 3 sample items (movies and TV shows)
 ```
+
+## Related Documentation
+
+- `docs/viewmodel-reorganization.md` - Details on the feature-based architecture migration
+- `AGENTS.md` - Available skills for AI assistants (iphone-apps, swift-concurrency)

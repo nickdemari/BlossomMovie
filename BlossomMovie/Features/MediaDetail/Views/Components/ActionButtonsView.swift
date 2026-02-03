@@ -2,42 +2,32 @@
 //  MediaDetailActionButtonsView.swift
 //  BlossomMovie
 //
-//  Created by Enterprise Refactoring on 1/4/26.
+//  Created by Nick Demari on 1/4/26.
 //
 
 import SwiftUI
-import SwiftData
 
 struct MediaDetailActionButtonsView: View {
-    let mediaItem: MediaItem
-    let viewModel: MediaDetailViewModel?
-    let downloadViewModel: DownloadViewModel?
-    let modelContext: ModelContext
-    
+    let hasTrailer: Bool
+    let isDownloaded: Bool
+    let onPlayTrailerTapped: () -> Void
+    let onDownloadTapped: () -> Void
+
     var body: some View {
         HStack(spacing: AppConstants.Layout.standardPadding) {
-            if let viewModel = viewModel, viewModel.hasTrailer {
+            if hasTrailer {
                 Button {
-                    Task {
-                        await viewModel.loadTrailer()
-                    }
+                    onPlayTrailerTapped()
                 } label: {
                     Label("Play Trailer", systemImage: "play.circle.fill")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(PrimaryButtonStyle())
             }
-            
+
             Button {
-                if let downloadViewModel = downloadViewModel {
-                    if downloadViewModel.isDownloaded(mediaItem) {
-                        downloadViewModel.removeFromDownloads(mediaItem, context: modelContext)
-                    } else {
-                        downloadViewModel.addToDownloads(mediaItem, context: modelContext)
-                    }
-                }
+                onDownloadTapped()
             } label: {
-                let isDownloaded = downloadViewModel?.isDownloaded(mediaItem) ?? false
                 Label(
                     isDownloaded ? "Remove" : "Download",
                     systemImage: isDownloaded ? "trash" : "arrow.down.circle"
@@ -51,13 +41,10 @@ struct MediaDetailActionButtonsView: View {
 
 #Preview {
     MediaDetailActionButtonsView(
-        mediaItem: MediaItem.previewItems[0],
-        viewModel: nil,
-        downloadViewModel: nil,
-        modelContext: ModelContext(
-            try! ModelContainer(for: MediaItem.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
-        )
+        hasTrailer: true,
+        isDownloaded: false,
+        onPlayTrailerTapped: {},
+        onDownloadTapped: {}
     )
     .padding()
-    .injectDependencies()
 }

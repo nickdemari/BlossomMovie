@@ -2,7 +2,7 @@
 //  HomeContentView.swift
 //  BlossomMovie
 //
-//  Created by Enterprise Refactoring on 1/4/26.
+//  Created by Nick Demari on 1/4/26.
 //
 
 import SwiftUI
@@ -25,6 +25,7 @@ struct HomeContentView: View {
                     insertion: .opacity.combined(with: .scale(scale: 0.8)),
                     removal: .opacity
                 ))
+                .animation(.easeInOut(duration: AppConstants.Animation.defaultDuration), value: viewModel.heroItem?.id)
             }
             
             // Content Sections
@@ -52,7 +53,6 @@ struct HomeContentView: View {
                 onItemTapped: onItemTapped
             )
         }
-        .animation(.easeInOut(duration: AppConstants.Animation.defaultDuration), value: viewModel.loadingState)
     }
 }
 

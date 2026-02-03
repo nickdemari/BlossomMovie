@@ -2,7 +2,7 @@
 //  HomeActionButton.swift
 //  BlossomMovie
 //
-//  Created by Enterprise Refactoring on 1/4/26.
+//  Created by Nick Demari on 1/4/26.
 //
 
 import SwiftUI
@@ -10,17 +10,17 @@ import SwiftUI
 struct HomeActionButton: View {
     let title: String
     let icon: String
-    let style: ButtonStyle
+    let style: ActionButtonStyle
     let action: () -> Void
-    
-    enum ButtonStyle {
+
+    enum ActionButtonStyle {
         case primary, secondary
     }
-    
+
     init(
         title: String,
         icon: String,
-        style: ButtonStyle = .primary,
+        style: ActionButtonStyle = .primary,
         action: @escaping () -> Void
     ) {
         self.title = title
@@ -60,7 +60,7 @@ struct HomeActionButton: View {
             style: .primary,
             action: {}
         )
-        
+
         HomeActionButton(
             title: "Download",
             icon: "arrow.down.circle",
